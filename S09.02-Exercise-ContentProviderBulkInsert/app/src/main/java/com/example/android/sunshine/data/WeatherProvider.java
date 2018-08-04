@@ -20,8 +20,11 @@ import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.annotation.NonNull;
+
+import com.example.android.sunshine.utilities.SunshineDateUtils;
 
 /**
  * This class serves as the ContentProvider for all of Sunshine's data. This class allows us to
@@ -138,9 +141,36 @@ public class WeatherProvider extends ContentProvider {
      */
     @Override
     public int bulkInsert(@NonNull Uri uri, @NonNull ContentValues[] values) {
-        throw new RuntimeException("Student, you need to implement the bulkInsert method!");
+        final SQLiteDatabase db = mOpenHelper.getWritableDatabase();
 
 //          TODO (2) Only perform our implementation of bulkInsert if the URI matches the CODE_WEATHER code
+        switch (sUriMatcher.match(uri)){
+            case CODE_WEATHER:
+                db.beginTransaction();
+                int rowInserted = 0;
+                try{
+                    for(ContentValues value:values){
+                        long weatherDate = value.getAsLong(WeatherContract.WeatherEntry.COLUMN_DATE);
+                        if(!SunshineDateUtils.isDateNormalized(weatherDate)) {
+                            throw new IllegalArgumentException("Date muse be normalized to insert");
+                        }
+                        long _id = db.insert(WeatherContract.WeatherEntry.TABLE_NAME, null,value);
+                        if(_id!=-1){
+                            rowInserted++;
+                        }
+                    }
+                    db.setTransactionSuccessful();
+
+                } finally {
+                    db.endTransaction();
+                }
+                if(rowInserted>0){
+                    getContext().getContentResolver().notifyChange(uri,null);
+                }
+                return  rowInserted;
+            default:
+                return super.bulkInsert(uri,values);
+        }
 
 //              TODO (3) Return the number of rows inserted from our implementation of bulkInsert
 
@@ -274,7 +304,21 @@ public class WeatherProvider extends ContentProvider {
      */
     @Override
     public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
-        throw new RuntimeException("Student, you need to implement the delete method!");
+        int numDeletedRows;
+        if(selection==null) selection = "1";
+        switch (sUriMatcher.match(uri)){
+            case CODE_WEATHER:
+                numDeletedRows = mOpenHelper.getWritableDatabase().delete(WeatherContract.WeatherEntry.TABLE_NAME,
+                        selection,
+                        selectionArgs);
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: "+uri);
+        }
+        if(numDeletedRows!=0){
+            getContext().getContentResolver().notifyChange(uri,null);
+        }
+        return numDeletedRows;
     }
 
     /**

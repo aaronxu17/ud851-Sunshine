@@ -15,7 +15,11 @@
  */
 package com.example.android.sunshine.utilities;
 
+import android.content.ContentValues;
 import android.content.Context;
+
+import com.example.android.sunshine.data.SunshinePreferences;
+import com.example.android.sunshine.data.WeatherContract;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -30,7 +34,6 @@ public final class OpenWeatherJsonUtils {
 
     /* Location information */
     private static final String OWM_CITY = "city";
-    private static final String OWM_CITY_NAME = "name";
     private static final String OWM_COORD = "coord";
 
     /* Location coordinate */
@@ -149,4 +152,5 @@ public final class OpenWeatherJsonUtils {
 
         return parsedWeatherData;
     }
+
 }
